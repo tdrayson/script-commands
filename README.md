@@ -4,11 +4,12 @@ This repository contains my personal custom Raycast script commands for various 
 
 ## Available Scripts
 
-### `enable_voicerover.applescript`
+### Enable VoiceOver
 
 - **Description**: Enables VoiceOver accessibility feature on macOS
 - **Type**: AppleScript
 - **Usage**: Run this script to quickly enable VoiceOver system-wide
+- **File**: `enable_voicerover.applescript`
 
 ## Installation
 
