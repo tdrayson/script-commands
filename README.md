@@ -23,12 +23,6 @@ This repository contains my personal custom Raycast script commands for various 
 
 - [Enable VoiceOver] Initial release of VoiceOver automation script
 
-#### Repository
-
-- Created repository structure and documentation
-- Added README with script documentation
-- Set up .gitignore for private scripts
-
 ## Contributing
 
 Feel free to contribute additional script commands by creating pull requests. Please ensure any new scripts are properly documented and tested.
