@@ -10,14 +10,12 @@
 // @raycast.packageName Calendar
 
 // Documentation:
-// @raycast.description Process cinema booking from cinema.md (markdown email) and add event to Calendar
+// @raycast.description Process Cineworld booking from clipboard (markdown email) and add event to Calendar
 // @raycast.author taylor_drayson
 // @raycast.authorURL https://raycast.com/taylor_drayson
 
 const { spawnSync } = require('child_process');
-const fs = require('fs');
 const https = require('https');
-const path = require('path');
 const { URL } = require('url');
 
 // Configuration object for easy updates
@@ -36,8 +34,6 @@ const CONFIG = {
   postFilmBuffer: 5, // extra minutes after runtime
   calendarName: 'Taylor and Gordon',
   placeholderEvent: 'Cinema Placeholder',
-  /** Markdown export path (same folder as this script) */
-  cinemaMarkdownFile: 'cinema.md',
   // Dynamic eating times based on screening type
   eatingTimes: {
     '2D': 50,
@@ -52,6 +48,23 @@ const CONFIG = {
 
 // Utility functions
 const utils = {
+  /**
+   * Clipboard contents via pbpaste (copy the Cineworld email as markdown before running)
+   * @returns {string}
+   */
+  getClipboardContent() {
+    const result = spawnSync('pbpaste', [], { encoding: 'utf8' });
+    if (result.error) {
+      console.error('❌ Failed to read clipboard:', result.error.message);
+      process.exit(1);
+    }
+    if (result.status !== 0) {
+      console.error('❌ pbpaste exited with code', result.status);
+      process.exit(1);
+    }
+    return result.stdout ?? '';
+  },
+
   /**
    * Cleans and normalizes text by removing HTML tags and entities
    * @param {string} inputText - The raw text to clean
@@ -376,7 +389,7 @@ const bookingExtractor = {
 
   /**
    * Extracts all booking details from the booking content
-   * @param {string} bookingContent - Normalized booking text (from cinema.md)
+   * @param {string} bookingContent - Normalized booking text (from clipboard)
    * @returns {Object} Object containing all extracted booking details
    * @throws {Error} If no booking content is provided
    */
@@ -772,7 +785,7 @@ const calendarManager = {
 /**
  * Main processing function that handles the entire booking workflow
  * Extracts booking details, calculates timing, and creates calendar events
- * @param {string} bookingContent - Normalized booking text (from cinema.md)
+ * @param {string} bookingContent - Normalized booking text (from clipboard)
  * @throws {Error} If essential booking information is missing or invalid
  */
 async function processBooking(bookingContent) {
@@ -923,27 +936,27 @@ async function processBooking(bookingContent) {
 
 /**
  * Main execution function that orchestrates the entire script workflow
- * Reads cinema.md next to this script, normalizes markdown, and processes the booking
- * @throws {Error} If cinema.md is missing, empty, or processing fails
+ * Reads the Cineworld markdown from the clipboard (copy email as markdown first)
+ * @throws {Error} If the clipboard is empty or processing fails
  */
 async function main() {
   try {
-    const cinemaPath = path.join(__dirname, CONFIG.cinemaMarkdownFile);
+    const rawMarkdown = utils.getClipboardContent();
 
-    if (!fs.existsSync(cinemaPath)) {
+    if (!rawMarkdown || String(rawMarkdown).trim() === '') {
       console.error(
-        `❌ ${CONFIG.cinemaMarkdownFile} not found next to script:\n   ${cinemaPath}`,
+        '❌ Clipboard is empty. Copy your Cineworld booking as markdown, then run this command.',
       );
       process.exit(1);
     }
 
-    const rawMarkdown = fs.readFileSync(cinemaPath, 'utf8');
-    const normalizedMarkdown =
-      bookingExtractor.normalizeMarkdownForBooking(rawMarkdown);
+    const normalizedMarkdown = bookingExtractor.normalizeMarkdownForBooking(
+      String(rawMarkdown),
+    );
     const cleanedContent = utils.cleanText(normalizedMarkdown);
 
     if (!cleanedContent || cleanedContent.trim().length === 0) {
-      console.error(`❌ No usable content in ${CONFIG.cinemaMarkdownFile}`);
+      console.error('❌ No usable booking text after parsing.');
       process.exit(1);
     }
 
